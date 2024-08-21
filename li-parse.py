@@ -8,8 +8,22 @@ def parse_names_from_url(url):
     if match:
         # Extracting the relevant name part
         name_part = match.group(1) if match.group(1) else match.group(2)
-        # Split by '-' and capitalize each word, then join by space
-        name = ' '.join(word.capitalize() for word in name_part.split('-'))
+        
+        # Split by '-' and process each part
+        name_parts = name_part.split('-')
+        processed_parts = []
+
+        for part in name_parts:
+            # If the part contains a number and it's not the only part, skip it
+            if re.search(r'\d', part) and len(name_parts) > 1:
+                continue
+            # If the part contains a number and it's the only part, truncate at the number
+            if re.search(r'\d', part):
+                part = re.split(r'\d', part)[0]
+            processed_parts.append(part.capitalize())
+        
+        # Join processed parts by space
+        name = ' '.join(processed_parts).rstrip('. ')
         return name
     return None
 
