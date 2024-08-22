@@ -16,16 +16,12 @@ def clean_name(name_part, remove_suffixes=True):
     # Remove leading/trailing whitespace
     name_part = name_part.strip()
 
-    # Handle hyphenated suffixes with spaces around them (e.g., "Bob Smith - CPA")
-    if " -" in name_part:
-        name_part = name_part.split(" -")[0]
-
     words = name_part.split()
     cleaned_words = []
 
     for word in words:
         # Skip words that are suffixes or contain numbers
-        if (remove_suffixes and word.upper() in suffixes) or re.search(r'\d', word):
+        if (remove_suffixes and word.upper().strip('-.') in suffixes) or re.search(r'\d', word):
             continue
 
         # Capitalize the first letter if the word is not all caps, otherwise capitalize only the first letter
@@ -41,35 +37,21 @@ def handle_hyphenated_names(name_parts):
     """Handles hyphenated names according to specified rules."""
     processed_names = []
 
-    if len(name_parts) == 2 and '-' in name_parts[0]:
-        # First name is hyphenated
-        first_name_parts = name_parts[0].split('-')
-        last_name = name_parts[1]
-        if len(first_name_parts) == 2:
-            processed_names.append(f"{first_name_parts[0]} {last_name}")
-            processed_names.append(f"{first_name_parts[1]} {last_name}")
-            processed_names.append(f"{first_name_parts[0]}-{first_name_parts[1]} {last_name}")
-    elif len(name_parts) == 2 and '-' in name_parts[1]:
-        # Last name is hyphenated
-        first_name = name_parts[0]
-        last_name_parts = name_parts[1].split('-')
-        if len(last_name_parts) == 2:
-            processed_names.append(f"{first_name} {last_name_parts[0]}")
-            processed_names.append(f"{first_name} {last_name_parts[1]}")
-            processed_names.append(f"{first_name} {last_name_parts[0]}-{last_name_parts[1]}")
-    elif len(name_parts) == 2 and ' ' in name_parts[1]:
-        # Last name consists of two words without a hyphen (e.g., "Hunter Smith")
-        first_name = name_parts[0]
-        last_name_parts = name_parts[1].split()
-        if len(last_name_parts) == 2:
-            processed_names.append(f"{first_name} {last_name_parts[0]}")
-            processed_names.append(f"{first_name} {last_name_parts[1]}")
-            processed_names.append(f"{first_name} {last_name_parts[0]}-{last_name_parts[1]}")
-    elif len(name_parts) == 3:
+    if len(name_parts) == 3:
         # Handle three-word names like "First Middle Last" -> "First Last", "First Middle-Last"
         processed_names.append(f"{name_parts[0]} {name_parts[2]}")
         processed_names.append(f"{name_parts[0]} {name_parts[1]}-{name_parts[2]}")
-        processed_names.append(f"{name_parts[0]} {name_parts[1]} {name_parts[2]}")
+        processed_names.append(f"{name_parts[0]} {name_parts[1]}")
+    elif len(name_parts) == 2:
+        # Check if the last name is hyphenated and handle accordingly
+        if '-' in name_parts[1]:
+            last_name_parts = name_parts[1].split('-')
+            if len(last_name_parts) == 2:
+                processed_names.append(f"{name_parts[0]} {last_name_parts[0]}")
+                processed_names.append(f"{name_parts[0]} {last_name_parts[1]}")
+                processed_names.append(f"{name_parts[0]} {last_name_parts[0]}-{last_name_parts[1]}")
+        else:
+            processed_names.append(' '.join(name_parts))
     else:
         processed_names.append(' '.join(name_parts))
 
@@ -118,10 +100,7 @@ def parse_names_from_fields(firstname, lastname, remove_suffixes=True):
         return [f"{formal_name} {name_parts[1]}", f"{nickname} {name_parts[1]}"]
 
     # Handle hyphenated names if applicable
-    if '-' in name_parts[0] or '-' in name_parts[1] or ' ' in name_parts[1]:
-        return handle_hyphenated_names(name_parts)
-    else:
-        return [' '.join(name_parts)]
+    return handle_hyphenated_names(name_parts)
 
 def parse_names_from_url(url, remove_suffixes=True):
     """Extracts and cleans the name from the URL if present."""
@@ -134,7 +113,7 @@ def parse_names_from_url(url, remove_suffixes=True):
 
         for part in name_parts:
             # Remove any part that contains numbers or suffixes
-            if not re.search(r'\d', part) and (not remove_suffixes or part.upper() not in suffixes):
+            if not re.search(r'\d', part) and (not remove_suffixes or part.upper().strip('-.') not in suffixes):
                 processed_parts.append(part.capitalize())
 
         name = ' '.join(processed_parts).rstrip('. ')
