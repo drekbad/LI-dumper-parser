@@ -8,7 +8,7 @@ suffixes = [
     'CEM', 'CFP', 'CISSP', 'CP', 'CPA', 'CPE', 'CPSM', 'CRHA', 'CRIA', 'CSM', 'CSPO',
     'DDS', 'DO', 'DVM', 'Eng.', 'FCIPD', 'Ing.', 'JD', 'Jr.', 'LEED', 'LPN', 'LSSB',
     'M.Sc.A', 'MBA', 'MD', 'MPH', 'MSW', 'MSc', 'Manager', 'OT', 'P.E.', 'P.Eng', 'PA',
-    'PE', 'PMP', 'PT', 'Ph.D', 'RN', 'SAFe', 'SHRM', 'SHRM-CP', 'SHRM-SCP'
+    'PE', 'PMP', 'PT', 'Ph.D', 'PhD', 'RN', 'SAFe', 'SHRM', 'SHRM-CP', 'SHRM-SCP'
 ]
 
 def clean_name(name_part, remove_suffixes=True):
@@ -101,8 +101,15 @@ def process_special_cases(special_cases):
 
 def parse_names_from_fields(firstname, lastname, remove_suffixes=True):
     """Handles the logic for processing firstname and lastname fields."""
+    # Clean both firstname and lastname
     name_parts = [clean_name(firstname, remove_suffixes), clean_name(lastname, remove_suffixes)]
     
+    # Handle cases with nicknames in parentheses
+    if "(" in name_parts[0] and ")" in name_parts[0]:
+        nickname = re.search(r'\((.*?)\)', name_parts[0]).group(1)
+        formal_name = re.sub(r'\s*\(.*?\)\s*', ' ', name_parts[0]).strip()
+        return [f"{formal_name} {name_parts[1]}", f"{nickname} {name_parts[1]}"]
+
     # Handle hyphenated names if applicable
     if '-' in name_parts[0] or '-' in name_parts[1] or ' ' in name_parts[1]:
         return handle_hyphenated_names(name_parts)
@@ -172,9 +179,13 @@ def process_file(input_file, output_file=None, remove_suffixes=True, parse_urls=
     expected_names.update(reprocessed_names)
     special_cases = remaining_special_cases
 
+    # Sort special cases, with single-letter names sorted together
+    single_letter_cases = sorted([name for name in special_cases if any(len(part) == 1 for part in name.split())])
+    other_special_cases = sorted([name for name in special_cases if name not in single_letter_cases])
+
     # Prepare final sorted and unique output
     final_expected_names = sorted(expected_names)
-    final_special_cases = sorted(special_cases)
+    final_special_cases = single_letter_cases + other_special_cases
 
     final_output = final_expected_names + [''] + final_special_cases
 
