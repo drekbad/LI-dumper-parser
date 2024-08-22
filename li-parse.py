@@ -5,9 +5,11 @@ import re
 
 # List of suffixes or titles to remove
 suffixes = [
-    'PMP', 'CPE', 'CISSP', 'MBA', 'CPA', 'Ph.D', 'M.Sc.A', 'SHRM-CP', 'MD', 'DO', 
-    'DDS', 'DVM', 'PE', 'JD', 'MPH', 'MSW', 'CFP', 'RN', 'LPN', 'PT', 'OT', 'Eng'
-]  # Add more as needed
+    'CEM', 'CFP', 'CISSP', 'CP', 'CPA', 'CPE', 'CPSM', 'CRHA', 'CRIA', 'CSM', 'CSPO',
+    'DDS', 'DO', 'DVM', 'Eng.', 'FCIPD', 'Ing.', 'JD', 'Jr.', 'LEED', 'LPN', 'LSSB',
+    'M.Sc.A', 'MBA', 'MD', 'MPH', 'MSW', 'MSc', 'Manager', 'OT', 'P.E.', 'P.Eng', 'PA',
+    'PE', 'PMP', 'PT', 'Ph.D', 'RN', 'SAFe', 'SHRM', 'SHRM-CP', 'SHRM-SCP'
+]
 
 def clean_name(name_part, remove_suffixes=True):
     """Cleans up a name part by removing suffixes, numbers, and trailing non-letter characters."""
@@ -47,10 +49,18 @@ def handle_hyphenated_names(name_parts):
             processed_names.append(f"{first_name_parts[0]} {last_name}")
             processed_names.append(f"{first_name_parts[1]} {last_name}")
             processed_names.append(f"{first_name_parts[0]}-{first_name_parts[1]} {last_name}")
-    elif len(name_parts) == 3 and '-' in name_parts[1]:
+    elif len(name_parts) == 2 and '-' in name_parts[1]:
         # Last name is hyphenated
         first_name = name_parts[0]
         last_name_parts = name_parts[1].split('-')
+        if len(last_name_parts) == 2:
+            processed_names.append(f"{first_name} {last_name_parts[0]}")
+            processed_names.append(f"{first_name} {last_name_parts[1]}")
+            processed_names.append(f"{first_name} {last_name_parts[0]}-{last_name_parts[1]}")
+    elif len(name_parts) == 2 and ' ' in name_parts[1]:
+        # Last name consists of two words without a hyphen (e.g., "Hunter Smith")
+        first_name = name_parts[0]
+        last_name_parts = name_parts[1].split()
         if len(last_name_parts) == 2:
             processed_names.append(f"{first_name} {last_name_parts[0]}")
             processed_names.append(f"{first_name} {last_name_parts[1]}")
@@ -65,7 +75,7 @@ def parse_names_from_fields(firstname, lastname, remove_suffixes=True):
     name_parts = [clean_name(firstname, remove_suffixes), clean_name(lastname, remove_suffixes)]
     
     # Handle hyphenated names if applicable
-    if '-' in name_parts[0] or '-' in name_parts[1]:
+    if '-' in name_parts[0] or '-' in name_parts[1] or ' ' in name_parts[1]:
         return handle_hyphenated_names(name_parts)
     else:
         return [' '.join(name_parts)]
