@@ -6,7 +6,7 @@ import re
 # List of suffixes or titles to remove
 suffixes = [
     'CEM', 'CFP', 'CISSP', 'CP', 'CPA', 'CPE', 'CPSM', 'CRHA', 'CRIA', 'CSM', 'CSPO',
-    'DDS', 'DO', 'DVM', 'Eng.', 'FCIPD', 'Ing.', 'JD', 'Jr.', 'LEED', 'LPN', 'LSSB',
+    'DDS', 'DO', 'DVM', 'Eng.', 'FCIPD', 'Ing.', 'JD', 'Jr.', 'LEED', 'LPN', 'LSSBB',
     'M.Sc.A', 'MBA', 'MD', 'MPH', 'MSW', 'MSc', 'Manager', 'OT', 'P.E.', 'P.Eng', 'PA',
     'PE', 'PMP', 'PT', 'Ph.D', 'PhD', 'RN', 'SAFe', 'SHRM', 'SHRM-CP', 'SHRM-SCP'
 ]
@@ -92,8 +92,10 @@ def process_special_cases(special_cases):
             # Handle nicknames in parentheses
             nickname = re.search(r'\((.*?)\)', name).group(1)
             name_without_parens = re.sub(r'\s*\(.*?\)\s*', ' ', name).strip()
-            reprocessed_names.add(name_without_parens)
-            reprocessed_names.add(f"{nickname} {name_parts[-1]}")
+            formal_name = clean_name(name_without_parens)
+            nickname_name = clean_name(f"{nickname} {name_parts[-1]}")
+            reprocessed_names.add(formal_name)
+            reprocessed_names.add(nickname_name)
         else:
             remaining_special_cases.add(name)
 
@@ -126,7 +128,7 @@ def parse_names_from_url(url, remove_suffixes=True):
         processed_parts = []
 
         for part in name_parts:
-            # Remove any part that contains numbers
+            # Remove any part that contains numbers or suffixes
             if not re.search(r'\d', part) and (not remove_suffixes or part.upper() not in suffixes):
                 processed_parts.append(part.capitalize())
 
