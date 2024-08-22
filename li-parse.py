@@ -70,6 +70,35 @@ def handle_hyphenated_names(name_parts):
 
     return processed_names
 
+def process_special_cases(special_cases):
+    """Processes special cases to see if they can be moved to the main list."""
+    reprocessed_names = set()
+    remaining_special_cases = set()
+
+    for name in special_cases:
+        name_parts = name.split()
+        if len(name_parts) == 3 and len(name_parts[1]) == 1:
+            # If the middle name is a single letter, remove it and process as a two-word name
+            reprocessed_names.add(f"{name_parts[0]} {name_parts[2]}")
+        elif len(name_parts) == 3:
+            # If it's a three-word name, process it as a hyphenated name
+            processed_names = handle_hyphenated_names(name_parts)
+            for processed_name in processed_names:
+                if is_special_case(processed_name):
+                    remaining_special_cases.add(processed_name)
+                else:
+                    reprocessed_names.add(processed_name)
+        elif "(" in name and ")" in name:
+            # Handle nicknames in parentheses
+            nickname = re.search(r'\((.*?)\)', name).group(1)
+            name_without_parens = re.sub(r'\s*\(.*?\)\s*', ' ', name).strip()
+            reprocessed_names.add(name_without_parens)
+            reprocessed_names.add(f"{nickname} {name_parts[-1]}")
+        else:
+            remaining_special_cases.add(name)
+
+    return reprocessed_names, remaining_special_cases
+
 def parse_names_from_fields(firstname, lastname, remove_suffixes=True):
     """Handles the logic for processing firstname and lastname fields."""
     name_parts = [clean_name(firstname, remove_suffixes), clean_name(lastname, remove_suffixes)]
@@ -135,6 +164,13 @@ def process_file(input_file, output_file=None, remove_suffixes=True, parse_urls=
                         special_cases.add(name_from_url)
                     else:
                         expected_names.add(name_from_url)
+
+    # Process special cases to see if they can be moved to the main list
+    reprocessed_names, remaining_special_cases = process_special_cases(special_cases)
+
+    # Combine reprocessed names into the expected names
+    expected_names.update(reprocessed_names)
+    special_cases = remaining_special_cases
 
     # Prepare final sorted and unique output
     final_expected_names = sorted(expected_names)
