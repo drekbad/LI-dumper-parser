@@ -65,6 +65,11 @@ def handle_hyphenated_names(name_parts):
             processed_names.append(f"{first_name} {last_name_parts[0]}")
             processed_names.append(f"{first_name} {last_name_parts[1]}")
             processed_names.append(f"{first_name} {last_name_parts[0]}-{last_name_parts[1]}")
+    elif len(name_parts) == 3:
+        # Handle three-word names like "First Middle Last" -> "First Last", "First Middle-Last"
+        processed_names.append(f"{name_parts[0]} {name_parts[2]}")
+        processed_names.append(f"{name_parts[0]} {name_parts[1]}-{name_parts[2]}")
+        processed_names.append(f"{name_parts[0]} {name_parts[1]} {name_parts[2]}")
     else:
         processed_names.append(' '.join(name_parts))
 
@@ -181,9 +186,18 @@ def process_file(input_file, output_file=None, remove_suffixes=True, parse_urls=
     expected_names.update(reprocessed_names)
     special_cases = remaining_special_cases
 
+    # Recheck special cases to ensure no suffixes remain
+    filtered_special_cases = set()
+    for name in special_cases:
+        cleaned_name = clean_name(name, remove_suffixes=True)
+        if cleaned_name != name:
+            expected_names.add(cleaned_name)
+        else:
+            filtered_special_cases.add(name)
+
     # Sort special cases, with single-letter names sorted together
-    single_letter_cases = sorted([name for name in special_cases if any(len(part) == 1 for part in name.split())])
-    other_special_cases = sorted([name for name in special_cases if name not in single_letter_cases])
+    single_letter_cases = sorted([name for name in filtered_special_cases if any(len(part) == 1 for part in name.split())])
+    other_special_cases = sorted([name for name in filtered_special_cases if name not in single_letter_cases])
 
     # Prepare final sorted and unique output
     final_expected_names = sorted(expected_names)
